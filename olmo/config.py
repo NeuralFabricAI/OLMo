@@ -21,6 +21,7 @@ from omegaconf import DictConfig, ListConfig
 from omegaconf import OmegaConf as om
 from omegaconf.errors import OmegaConfBaseException
 from torch.distributed.fsdp import MixedPrecision, ShardingStrategy
+import numpy as np
 
 from .aliases import PathOrStr
 from .exceptions import OLMoConfigurationError
@@ -546,6 +547,7 @@ class PaddingDirection(StrEnum):
 @dataclass
 class DataConfig(BaseConfig):
     paths: Optional[List[str]] = None
+    memmap_dtype: Optional[str] = "uint16"
     datasets: Optional[Dict[str, List[str]]] = None
     label_mask_paths: Optional[List[str]] = None
     pad_direction: PaddingDirection = PaddingDirection.right
@@ -558,6 +560,18 @@ class DataConfig(BaseConfig):
     timeout: int = 0
     seed: Optional[int] = None
 
+    @property
+    def effective_memmap_dtype(self):
+        if self.memmap_dtype == "uint8":
+            return np.uint8
+        if self.memmap_dtype == "uint16":
+            return np.uint16
+        elif self.memmap_dtype == "uint32":
+            return np.uint32
+        elif self.memmap_dtype == "uint64":
+            return np.uint64
+        # default to uint16 if not set
+        return np.uint16
 
 class EvaluatorType(StrEnum):
     downstream = "downstream"
