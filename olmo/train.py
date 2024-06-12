@@ -1072,6 +1072,7 @@ class Trainer:
 
                     # Log metrics to console.
                     if self.global_step % self.cfg.console_log_interval == 0:
+                        self.nf_metrics.log(metrics, self.global_step)
                         if get_global_rank() == 0:
                             self.log_metrics_to_console(f"[step={self.global_step}/{self.max_steps}]", metrics)
                         else:
@@ -1084,7 +1085,6 @@ class Trainer:
                         and self.global_step % self.cfg.wandb.log_interval == 0
                     ):
                         wandb.log(metrics, step=self.global_step)
-                    self.nf_metrics.log(metrics, self.global_step)
 
                     # Check if/when run should be canceled.
                     if not cancel_initiated and self.global_step % self.cfg.canceled_check_interval == 0:
