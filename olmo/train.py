@@ -49,6 +49,7 @@ from .torch_util import (
     synchronize_value,
 )
 from .util import upload
+from .nf_metrics import NFMetrics
 
 __all__ = ["SpeedMonitor", "LRMonitor", "Trainer"]
 
@@ -144,6 +145,7 @@ class Trainer:
     last_unsharded_checkpoint_step: Optional[int] = None
 
     def __post_init__(self):
+        self.nf_metrics = NFMetrics("nf_metrics.log")
         if self.cfg.fused_loss:
             from flash_attn.ops.triton.cross_entropy import (  # type: ignore
                 cross_entropy_loss,
@@ -1082,6 +1084,7 @@ class Trainer:
                         and self.global_step % self.cfg.wandb.log_interval == 0
                     ):
                         wandb.log(metrics, step=self.global_step)
+                    self.nf_metrics.log(metrics, self.global_step)
 
                     # Check if/when run should be canceled.
                     if not cancel_initiated and self.global_step % self.cfg.canceled_check_interval == 0:
