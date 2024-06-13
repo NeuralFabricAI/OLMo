@@ -146,7 +146,7 @@ class Trainer:
 
     def __post_init__(self):
         if get_global_rank() == 0:
-            log.info(f"Initializing NF metrics on worker with global rank")
+            log.info(f"Initializing NF metrics on worker with global rank 0.")
             self.nf_metrics = NFMetrics("nf_metrics.log", self.cfg.remote_save_folder)
         if self.cfg.fused_loss:
             from flash_attn.ops.triton.cross_entropy import (  # type: ignore
