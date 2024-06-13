@@ -147,7 +147,9 @@ class Trainer:
     def __post_init__(self):
         if get_global_rank() == 0:
             log.info(f"Initializing NF metrics on worker with global rank 0.")
-            self.nf_metrics = NFMetrics("nf_metrics.log", self.cfg.remote_save_folder)
+            metrics_file_name = self.cfg.run_name + "_nf_metrics.log"
+            metrics_file_path = os.path.join("/tmp/ray/session_latest/", metrics_file_name)
+            self.nf_metrics = NFMetrics(metrics_file_path, self.cfg.remote_save_folder)
         if self.cfg.fused_loss:
             from flash_attn.ops.triton.cross_entropy import (  # type: ignore
                 cross_entropy_loss,
@@ -1146,7 +1148,7 @@ class Trainer:
                         speed_monitor.reset()
 
                         #TODO(lx): Separate the metrics file saving from checkpoint saving.
-                        if get_global_rank() == 0:
+                        if get_global_rank() == 0 and self.nf_metrics.enable_checkpointing:
                             self.nf_metrics.checkpoint()
 
                     # Maybe run evaluations.
