@@ -23,6 +23,7 @@ class NFMetrics:
 
         if checkpoint_exists:
             try:
+                s3 = boto3.client('s3')
                 log.info(f"Downloading metrics file from S3: {bucket}/{filename}")
                 s3.download_file(bucket, filename, self.metrics_file)
                 log.info(f"Downloaded metrics file from S3: {bucket}/{filename}")
