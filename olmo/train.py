@@ -145,7 +145,9 @@ class Trainer:
     last_unsharded_checkpoint_step: Optional[int] = None
 
     def __post_init__(self):
-        self.nf_metrics = NFMetrics("nf_metrics.log")
+        if get_global_rank() == 0:
+            log.info(f"Initializing NF metrics on worker with global rank")
+            self.nf_metrics = NFMetrics("nf_metrics.log", self.cfg.remote_save_folder)
         if self.cfg.fused_loss:
             from flash_attn.ops.triton.cross_entropy import (  # type: ignore
                 cross_entropy_loss,
@@ -1072,9 +1074,9 @@ class Trainer:
 
                     # Log metrics to console.
                     if self.global_step % self.cfg.console_log_interval == 0:
-                        self.nf_metrics.log(metrics, self.global_step)
                         if get_global_rank() == 0:
                             self.log_metrics_to_console(f"[step={self.global_step}/{self.max_steps}]", metrics)
+                            self.nf_metrics.log(metrics, self.global_step)
                         else:
                             log.info(f"[step={self.global_step}/{self.max_steps}]")
 
@@ -1142,6 +1144,9 @@ class Trainer:
 
                         # Reset speed monitor so that we don't count the time taken to save checkpoints.
                         speed_monitor.reset()
+
+                        #TODO(lx): Separate the metrics file saving from checkpoint saving.
+                        self.nf_metrics.checkpoint()
 
                     # Maybe run evaluations.
                     if not cancel_initiated and self.global_step % self.cfg.eval_interval == 0:
