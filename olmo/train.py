@@ -1146,7 +1146,8 @@ class Trainer:
                         speed_monitor.reset()
 
                         #TODO(lx): Separate the metrics file saving from checkpoint saving.
-                        self.nf_metrics.checkpoint()
+                        if get_global_rank() == 0:
+                            self.nf_metrics.checkpoint()
 
                     # Maybe run evaluations.
                     if not cancel_initiated and self.global_step % self.cfg.eval_interval == 0:
