@@ -2,6 +2,7 @@ from typing import Any, Dict, Optional
 import boto3
 import os
 import logging
+import ray
 
 log = logging.getLogger(__name__)
 
@@ -33,12 +34,13 @@ class NFMetrics:
                     log.error(f"Error downloading metrics file from S3: {e}.")
 
     def log(self, data: Dict[str, Any], step: int):
-        with open(self.metrics_file_path, "a") as f:
-            wrapped_data = {
-                "metrics": data,
-                "step": step,
-            }
-            f.write(f"{wrapped_data}\n")
+        # with open(self.metrics_file_path, "a") as f:
+        #     wrapped_data = {
+        #         "metrics": data,
+        #         "step": step,
+        #     }
+        #     f.write(f"{wrapped_data}\n")
+        ray.train.report(metrics=data)
     
     def split_s3_uri(self, s3_uri: str):
         assert s3_uri.startswith('s3://')
