@@ -2,6 +2,7 @@ from typing import Any, Dict, Optional
 import boto3
 import os
 import logging
+import json
 
 log = logging.getLogger(__name__)
 
@@ -34,10 +35,10 @@ class NFMetrics:
 
     def log(self, data: Dict[str, Any], step: int):
         with open(self.metrics_file_path, "a") as f:
-            wrapped_data = {
+            wrapped_data = json.dumps({
                 "metrics": data,
                 "step": step,
-            }
+            })
             f.write(f"{wrapped_data}\n")
     
     def split_s3_uri(self, s3_uri: str):
