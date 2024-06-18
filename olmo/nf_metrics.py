@@ -34,9 +34,10 @@ class NFMetrics:
                     log.error(f"Error downloading metrics file from S3: {e}.")
 
     def log(self, data: Dict[str, Any], step: int):
+        updated_data = {key.replace('/', '_'): value for key, value in data.items()}
         with open(self.metrics_file_path, "a") as f:
             wrapped_data = json.dumps({
-                "metrics": data,
+                "metrics": updated_data,
                 "step": step,
             })
             f.write(f"{wrapped_data}\n")
