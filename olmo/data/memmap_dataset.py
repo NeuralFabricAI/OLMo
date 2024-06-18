@@ -77,6 +77,7 @@ class MemMapDataset(Dataset[Dict[str, Any]]):
         self._mmap_offsets: Optional[List[Tuple[int, int]]] = None
         self._num_instances: Optional[int] = None
         self.dtype = memmap_dtype
+        print(f"memmap_dtype: {memmap_dtype}")
         self._include_instance_metadata = include_instance_metadata
         self._generate_attention_mask = generate_attention_mask
         self._pad_token_id = pad_token_id

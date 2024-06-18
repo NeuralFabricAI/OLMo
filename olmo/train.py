@@ -50,6 +50,7 @@ from .torch_util import (
     synchronize_value,
 )
 from .util import upload
+from .nf_metrics import NFMetrics
 
 __all__ = ["SpeedMonitor", "LRMonitor", "Trainer"]
 
@@ -145,6 +146,11 @@ class Trainer:
     last_unsharded_checkpoint_step: Optional[int] = None
 
     def __post_init__(self):
+        if get_global_rank() == 0:
+            log.info(f"Initializing NF metrics on worker with global rank 0.")
+            metrics_file_name = self.cfg.run_name + "_nf_metrics.log"
+            metrics_file_path = os.path.join("/tmp/ray/session_latest/logs/", metrics_file_name)
+            self.nf_metrics = NFMetrics(metrics_file_path, self.cfg.remote_save_folder)
         if self.cfg.fused_loss:
             import flash_attn
             from flash_attn.ops.triton.cross_entropy import (  # type: ignore
@@ -1091,6 +1097,7 @@ class Trainer:
                     if self.global_step % self.cfg.console_log_interval == 0:
                         if get_global_rank() == 0:
                             self.log_metrics_to_console(f"[step={self.global_step}/{self.max_steps}]", metrics)
+                            self.nf_metrics.log(metrics, self.global_step)
                         else:
                             log.info(f"[step={self.global_step}/{self.max_steps}]")
 
@@ -1158,6 +1165,10 @@ class Trainer:
 
                         # Reset speed monitor so that we don't count the time taken to save checkpoints.
                         speed_monitor.reset()
+
+                        #TODO(lx): Separate the metrics file saving from checkpoint saving.
+                        if get_global_rank() == 0 and self.nf_metrics.enable_checkpointing:
+                            self.nf_metrics.checkpoint()
 
                     # Maybe run evaluations.
                     if not cancel_initiated and self.global_step % self.cfg.eval_interval == 0:
